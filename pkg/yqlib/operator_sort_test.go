@@ -12,6 +12,27 @@ var sortByOperatorScenarios = []expressionScenario{
 		},
 	},
 	{
+		description: "Sort by string field",
+		skipDoc:     true,
+		document:    "[{a: banana},{a: apple}]",
+		expression:  `sort_by(.a)[]`,
+		expected: []string{
+			"D0, P[1], (!!map)::{a: apple}\n",
+			"D0, P[0], (!!map)::{a: banana}\n",
+		},
+	},
+	{
+		description: "Sort by with null",
+		skipDoc:     true,
+		document:    "[{a: banana},null,{a: apple}]",
+		expression:  `sort_by(.a)[]`,
+		expected: []string{
+			"D0, P[1], (!!null)::null\n",
+			"D0, P[2], (!!map)::{a: apple}\n",
+			"D0, P[0], (!!map)::{a: banana}\n",
+		},
+	},
+	{
 		description: "Sort by multiple fields",
 		document:    "[{a: dog},{a: cat, b: banana},{a: cat, b: apple}]",
 		expression:  `sort_by(.a, .b)`,
@@ -51,7 +72,7 @@ var sortByOperatorScenarios = []expressionScenario{
 		document:    "cool: [{a: banana},{a: cat},{a: apple}]",
 		expression:  `.cool |= sort_by(.a)`,
 		expected: []string{
-			"D0, P[], (doc)::cool: [{a: apple}, {a: banana}, {a: cat}]\n",
+			"D0, P[], (!!map)::cool: [{a: apple}, {a: banana}, {a: cat}]\n",
 		},
 	},
 	{
@@ -60,7 +81,7 @@ var sortByOperatorScenarios = []expressionScenario{
 		document:       "cool: [{b: banana},{a: banana},{c: banana}]",
 		expression:     `.cool |= sort_by(keys | .[0])`,
 		expected: []string{
-			"D0, P[], (doc)::cool: [{a: banana}, {b: banana}, {c: banana}]\n",
+			"D0, P[], (!!map)::cool: [{a: banana}, {b: banana}, {c: banana}]\n",
 		},
 	},
 	{
@@ -102,6 +123,16 @@ var sortByOperatorScenarios = []expressionScenario{
 		expression:  `sort`,
 		expected: []string{
 			"D0, P[], (!!seq)::[null, false, true, 3, 6, 8, cat]\n",
+		},
+	},
+	{
+		description: "Sort, nulls come first",
+		skipDoc:     true,
+		document:    "[8,null]",
+		expression:  `sort[]`,
+		expected: []string{
+			"D0, P[1], (!!null)::null\n",
+			"D0, P[0], (!!int)::8\n",
 		},
 	},
 	{

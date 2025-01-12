@@ -3,6 +3,7 @@ package yqlib
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"strings"
 )
 
@@ -26,10 +27,13 @@ func processFormatScenario(s formatScenario, decoder Decoder, encoder Encoder) (
 		decoder = NewYamlDecoder(ConfiguredYamlPreferences)
 	}
 
+	log.Debugf("reading docs")
 	inputs, err := readDocuments(strings.NewReader(s.input), "sample.yml", 0, decoder)
 	if err != nil {
 		return "", err
 	}
+
+	log.Debugf("done reading the documents")
 
 	expression := s.expression
 	if expression == "" {
@@ -43,6 +47,8 @@ func processFormatScenario(s formatScenario, decoder Decoder, encoder Encoder) (
 	}
 
 	context, err := NewDataTreeNavigator().GetMatchingNodes(Context{MatchingNodes: inputs}, exp)
+
+	log.Debugf("Going to print: %v", NodesToString(context.MatchingNodes))
 
 	if err != nil {
 		return "", err
@@ -62,7 +68,7 @@ func mustProcessFormatScenario(s formatScenario, decoder Decoder, encoder Encode
 
 	result, err := processFormatScenario(s, decoder, encoder)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("Bad scenario %v: %w", s.description, err))
 	}
 	return result
 

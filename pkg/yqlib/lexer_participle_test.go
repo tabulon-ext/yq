@@ -5,7 +5,6 @@ import (
 
 	"github.com/alecthomas/repr"
 	"github.com/mikefarah/yq/v4/test"
-	yaml "gopkg.in/yaml.v3"
 )
 
 type participleLexerScenario struct {
@@ -14,6 +13,65 @@ type participleLexerScenario struct {
 }
 
 var participleLexerScenarios = []participleLexerScenario{
+	{
+		expression: "to_entries[]",
+		tokens: []*token{
+			{
+				TokenType: operationToken,
+				Operation: &Operation{
+					OperationType: toEntriesOpType,
+					Value:         "TO_ENTRIES",
+					StringValue:   "to_entries",
+				},
+				CheckForPostTraverse: true,
+			},
+			{
+				TokenType: operationToken,
+				Operation: &Operation{
+					OperationType: traverseArrayOpType,
+				},
+			},
+			{
+				TokenType: openCollect,
+				Match:     "[",
+			},
+			{
+				TokenType: operationToken,
+				Operation: &Operation{
+					OperationType: emptyOpType,
+					StringValue:   "EMPTY",
+				},
+			},
+			{
+				TokenType:            closeCollect,
+				CheckForPostTraverse: true,
+				Match:                "]",
+			},
+		},
+	},
+	{
+		expression: ".a!=",
+		tokens: []*token{
+			{
+				TokenType: operationToken,
+				Operation: &Operation{
+					OperationType: traversePathOpType,
+					Value:         "a",
+					StringValue:   "a",
+					Preferences:   traversePreferences{},
+				},
+				CheckForPostTraverse: true,
+			},
+			{
+				TokenType: operationToken,
+				Operation: &Operation{
+					OperationType: notEqualsOpType,
+					Value:         "NOT_EQUALS",
+					StringValue:   "!=",
+				},
+			},
+		},
+	},
 	{
 		expression: ".[:3]",
 		tokens: []*token{
@@ -41,11 +99,9 @@ var participleLexerScenarios = []participleLexerScenario{
 					Value:         0,
 					StringValue:   "0",
 					CandidateNode: &CandidateNode{
-						Node: &yaml.Node{
-							Kind:  yaml.ScalarNode,
-							Tag:   "!!int",
-							Value: "0",
-						},
+						Kind:  ScalarNode,
+						Tag:   "!!int",
+						Value: "0",
 					},
 				},
 			},
@@ -64,11 +120,9 @@ var participleLexerScenarios = []participleLexerScenario{
 					Value:         int64(3),
 					StringValue:   "3",
 					CandidateNode: &CandidateNode{
-						Node: &yaml.Node{
-							Kind:  yaml.Kind(8),
-							Tag:   "!!int",
-							Value: "3",
-						},
+						Kind:  ScalarNode,
+						Tag:   "!!int",
+						Value: "3",
 					},
 				},
 			},
@@ -106,11 +160,9 @@ var participleLexerScenarios = []participleLexerScenario{
 					Value:         int64(-2),
 					StringValue:   "-2",
 					CandidateNode: &CandidateNode{
-						Node: &yaml.Node{
-							Kind:  yaml.ScalarNode,
-							Tag:   "!!int",
-							Value: "-2",
-						},
+						Kind:  ScalarNode,
+						Tag:   "!!int",
+						Value: "-2",
 					},
 				},
 			},
@@ -431,6 +483,7 @@ var participleLexerScenarios = []participleLexerScenario{
 					StringValue:   "map_values",
 					Preferences:   nil,
 				},
+				CheckForPostTraverse: mapValuesOpType.CheckForPostTraverse,
 			},
 		},
 	},
@@ -445,6 +498,7 @@ var participleLexerScenarios = []participleLexerScenario{
 					StringValue:   "mapvalues",
 					Preferences:   nil,
 				},
+				CheckForPostTraverse: mapValuesOpType.CheckForPostTraverse,
 			},
 		},
 	},
@@ -459,6 +513,7 @@ var participleLexerScenarios = []participleLexerScenario{
 					StringValue:   "flatten(3)",
 					Preferences:   flattenPreferences{depth: 3},
 				},
+				CheckForPostTraverse: flattenOpType.CheckForPostTraverse,
 			},
 		},
 	},
@@ -473,6 +528,7 @@ var participleLexerScenarios = []participleLexerScenario{
 					StringValue:   "flatten",
 					Preferences:   flattenPreferences{depth: -1},
 				},
+				CheckForPostTraverse: flattenOpType.CheckForPostTraverse,
 			},
 		},
 	},
@@ -514,7 +570,7 @@ var participleLexerScenarios = []participleLexerScenario{
 					Value:         "ENCODE",
 					StringValue:   "to_yaml(3)",
 					Preferences: encoderPreferences{
-						format: YamlOutputFormat,
+						format: YamlFormat,
 						indent: 3,
 					},
 				},
@@ -531,7 +587,7 @@ var participleLexerScenarios = []participleLexerScenario{
 					Value:         "ENCODE",
 					StringValue:   "tojson(2)",
 					Preferences: encoderPreferences{
-						format: JSONOutputFormat,
+						format: JSONFormat,
 						indent: 2,
 					},
 				},
@@ -548,7 +604,7 @@ var participleLexerScenarios = []participleLexerScenario{
 					Value:         "ENCODE",
 					StringValue:   "@yaml",
 					Preferences: encoderPreferences{
-						format: YamlOutputFormat,
+						format: YamlFormat,
 						indent: 2,
 					},
 				},
@@ -565,7 +621,7 @@ var participleLexerScenarios = []participleLexerScenario{
 					Value:         "ENCODE",
 					StringValue:   "to_props",
 					Preferences: encoderPreferences{
-						format: PropsOutputFormat,
+						format: PropertiesFormat,
 						indent: 2,
 					},
 				},
@@ -582,7 +638,7 @@ var participleLexerScenarios = []participleLexerScenario{
 					Value:         "DECODE",
 					StringValue:   "@base64d",
 					Preferences: decoderPreferences{
-						format: Base64InputFormat,
+						format: Base64Format,
 					},
 				},
 			},
@@ -598,7 +654,7 @@ var participleLexerScenarios = []participleLexerScenario{
 					Value:         "ENCODE",
 					StringValue:   "@base64",
 					Preferences: encoderPreferences{
-						format: Base64OutputFormat,
+						format: Base64Format,
 					},
 				},
 			},
@@ -614,7 +670,7 @@ var participleLexerScenarios = []participleLexerScenario{
 					Value:         "DECODE",
 					StringValue:   "@yamld",
 					Preferences: decoderPreferences{
-						format: YamlInputFormat,
+						format: YamlFormat,
 					},
 				},
 			},
@@ -626,17 +682,10 @@ var participleLexerScenarios = []participleLexerScenario{
 			{
 				TokenType: operationToken,
 				Operation: &Operation{
-					OperationType: valueOpType,
+					OperationType: stringInterpolationOpType,
 					Value:         "string with a\n",
 					StringValue:   "string with a\n",
 					Preferences:   nil,
-					CandidateNode: &CandidateNode{
-						Node: &yaml.Node{
-							Kind:  yaml.ScalarNode,
-							Tag:   "!!str",
-							Value: "string with a\n",
-						},
-					},
 				},
 			},
 		},
@@ -647,17 +696,10 @@ var participleLexerScenarios = []participleLexerScenario{
 			{
 				TokenType: operationToken,
 				Operation: &Operation{
-					OperationType: valueOpType,
+					OperationType: stringInterpolationOpType,
 					Value:         `string with a "`,
 					StringValue:   `string with a "`,
 					Preferences:   nil,
-					CandidateNode: &CandidateNode{
-						Node: &yaml.Node{
-							Kind:  yaml.ScalarNode,
-							Tag:   "!!str",
-							Value: `string with a "`,
-						},
-					},
 				},
 			},
 		},

@@ -72,6 +72,15 @@ EOL
   assertEquals "\"cat\"" "$X"
 }
 
+testOutputYamlRawOnRoot() {
+  cat >test.yml <<EOL
+'a'
+EOL
+
+  X=$(./yq e -r '.' test.yml)
+  assertEquals "a" "$X"
+}
+
 testOutputJsonRaw() {
   cat >test.yml <<EOL
 a: cat
@@ -189,6 +198,27 @@ EOM
   assertEquals "$expected" "$X"
 }
 
+testOutputCSVCustomSeparator() {
+  cat >test.yml <<EOL
+- fruit: apple
+  yumLevel: 5
+- fruit: banana
+  yumLevel: 4
+EOL
+
+  read -r -d '' expected << EOM
+fruit;yumLevel
+apple;5
+banana;4
+EOM
+
+  X=$(./yq -oc --csv-separator ";" test.yml)
+  assertEquals "$expected" "$X"
+
+  X=$(./yq ea -o=csv --csv-separator ";" test.yml)
+  assertEquals "$expected" "$X"
+}
+
 testOutputTSV() {
   cat >test.yml <<EOL
 - fruit: apple
@@ -269,6 +299,45 @@ EOM
 
   X=$(./yq ea --output-format=x test.yml)
   assertEquals "$expected" "$X"
+}
+
+testLuaOutputPretty() {
+  cat >test.yml <<EOL
+animals:
+  cat: meow
+EOL
+
+  read -r -d '' expected << EOM
+return {
+	["animals"] = {
+		["cat"] = "meow";
+	};
+};
+EOM
+
+  X=$(./yq e --output-format=lua test.yml)
+  assertEquals "$expected" "$X"
+
+  X=$(./yq e --output-format=lua --prettyPrint test.yml)
+  assertEquals "$expected" "$X"
+
+}
+
+testLuaOutputSubset() {
+  cat >test.yml <<EOL
+animals:
+  cat: meow
+EOL
+
+  read -r -d '' expected << EOM
+return {
+	["cat"] = "meow";
+};
+EOM
+
+  X=$(./yq e --output-format=lua '.animals' test.yml)
+  assertEquals "$expected" "$X"
+
 }
 
 source ./scripts/shunit2
