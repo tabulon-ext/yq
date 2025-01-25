@@ -10,7 +10,7 @@ var selectOperatorScenarios = []expressionScenario{
 		document:   `cat`,
 		expression: `select(false, true)`,
 		expected: []string{
-			"D0, P[], (doc)::cat\n",
+			"D0, P[], (!!str)::cat\n",
 		},
 	},
 	{
@@ -18,7 +18,7 @@ var selectOperatorScenarios = []expressionScenario{
 		document:   `cat`,
 		expression: `select(true, false)`,
 		expected: []string{
-			"D0, P[], (doc)::cat\n",
+			"D0, P[], (!!str)::cat\n",
 		},
 	},
 	{
@@ -71,8 +71,19 @@ var selectOperatorScenarios = []expressionScenario{
 		document2:  "b: world",
 		expression: `select(.a == "hello" or .b == "world")`,
 		expected: []string{
-			"D0, P[], (doc)::a: hello\n",
-			"D0, P[], (doc)::b: world\n",
+			"D0, P[], (!!map)::a: hello\n",
+			"D0, P[], (!!map)::b: world\n",
+		},
+	},
+	{
+		description: "select splat",
+		skipDoc:     true,
+		document:    "a: hello",
+		document2:   "b: world",
+		expression:  `select(.a == "hello" or .b == "world")[]`,
+		expected: []string{
+			"D0, P[a], (!!str)::hello\n",
+			"D0, P[b], (!!str)::world\n",
 		},
 	},
 	{
@@ -81,7 +92,7 @@ var selectOperatorScenarios = []expressionScenario{
 		document:    `[{animal: cat, legs: {cool: true}}, {animal: fish}]`,
 		expression:  `(.[] | select(.legs.cool == true).canWalk) = true | (.[] | .alive.things) = "yes"`,
 		expected: []string{
-			"D0, P[], (doc)::[{animal: cat, legs: {cool: true}, canWalk: true, alive: {things: yes}}, {animal: fish, alive: {things: yes}}]\n",
+			"D0, P[], (!!seq)::[{animal: cat, legs: {cool: true}, canWalk: true, alive: {things: yes}}, {animal: fish, alive: {things: yes}}]\n",
 		},
 	},
 	{
@@ -121,7 +132,7 @@ var selectOperatorScenarios = []expressionScenario{
 		document:       `a: { things: cat, bob: goat, horse: dog }`,
 		expression:     `(.a.[] | select(. == "cat" or . == "goat")) |= "rabbit"`,
 		expected: []string{
-			"D0, P[], (doc)::a: {things: rabbit, bob: rabbit, horse: dog}\n",
+			"D0, P[], (!!map)::a: {things: rabbit, bob: rabbit, horse: dog}\n",
 		},
 	},
 	{
