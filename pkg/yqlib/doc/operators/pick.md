@@ -13,7 +13,7 @@ myMap:
   cat: meow
   dog: bark
   thing: hamster
-  hamster: squeek
+  hamster: squeak
 ```
 then
 ```bash
@@ -22,8 +22,32 @@ yq '.myMap |= pick(["hamster", "cat", "goat"])' sample.yml
 will output
 ```yaml
 myMap:
-  hamster: squeek
+  hamster: squeak
   cat: meow
+```
+
+## Pick keys from map, included all the keys
+We create a map of the picked keys plus all the current keys, and run that through unique
+
+Given a sample.yml file of:
+```yaml
+myMap:
+  cat: meow
+  dog: bark
+  thing: hamster
+  hamster: squeak
+```
+then
+```bash
+yq '.myMap |= pick( (["thing"] + keys) | unique)' sample.yml
+```
+will output
+```yaml
+myMap:
+  thing: hamster
+  cat: meow
+  dog: bark
+  hamster: squeak
 ```
 
 ## Pick indices from array

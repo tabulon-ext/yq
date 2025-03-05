@@ -40,6 +40,16 @@ var keysOperatorScenarios = []expressionScenario{
 		},
 	},
 	{
+		description: "Map keys with splat",
+		skipDoc:     true,
+		document:    `{dog: woof, cat: meow}`,
+		expression:  `keys[]`,
+		expected: []string{
+			"D0, P[dog], (!!str)::dog\n",
+			"D0, P[cat], (!!str)::cat\n",
+		},
+	},
+	{
 		skipDoc:    true,
 		document:   `{}`,
 		expression: `keys`,
@@ -90,7 +100,7 @@ var keysOperatorScenarios = []expressionScenario{
 		document:    "a:\n  x: 3\n  y: 4",
 		expression:  `(.a.x | key) = "meow"`,
 		expected: []string{
-			"D0, P[], (doc)::a:\n    meow: 3\n    y: 4\n",
+			"D0, P[], (!!map)::a:\n    meow: 3\n    y: 4\n",
 		},
 	},
 	{

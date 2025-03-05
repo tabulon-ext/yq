@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func getVariableOperator(d *dataTreeNavigator, context Context, expressionNode *ExpressionNode) (Context, error) {
+func getVariableOperator(_ *dataTreeNavigator, context Context, expressionNode *ExpressionNode) (Context, error) {
 	variableName := expressionNode.Operation.StringValue
 	log.Debug("getVariableOperator %v", variableName)
 	result := context.GetVariable(variableName)
@@ -19,7 +19,7 @@ type assignVarPreferences struct {
 	IsReference bool
 }
 
-func useWithPipe(d *dataTreeNavigator, context Context, originalExp *ExpressionNode) (Context, error) {
+func useWithPipe(_ *dataTreeNavigator, _ Context, _ *ExpressionNode) (Context, error) {
 	return Context{}, fmt.Errorf("must use variable with a pipe, e.g. `exp as $x | ...`")
 }
 
@@ -72,10 +72,7 @@ func variableLoopSingleChild(d *dataTreeNavigator, context Context, originalExp 
 		if prefs.IsReference {
 			variableValue.PushBack(el.Value)
 		} else {
-			candidateCopy, err := el.Value.(*CandidateNode).Copy()
-			if err != nil {
-				return Context{}, err
-			}
+			candidateCopy := el.Value.(*CandidateNode).Copy()
 			variableValue.PushBack(candidateCopy)
 		}
 		newContext := context.ChildContext(context.MatchingNodes)

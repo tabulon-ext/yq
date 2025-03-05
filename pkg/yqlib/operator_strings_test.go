@@ -6,6 +6,84 @@ import (
 
 var stringsOperatorScenarios = []expressionScenario{
 	{
+		description: "Interpolation",
+		document:    "value: things\nanother: stuff",
+		expression:  `.message = "I like \(.value) and \(.another)"`,
+		expected: []string{
+			"D0, P[], (!!map)::value: things\nanother: stuff\nmessage: I like things and stuff\n",
+		},
+	},
+	{
+		description: "Interpolation - not a string",
+		document:    `value: {an: apple}`,
+		expression:  `.message = "I like \(.value)"`,
+		expected: []string{
+			"D0, P[], (!!map)::value: {an: apple}\nmessage: 'I like {an: apple}'\n",
+		},
+	},
+	{
+		skipDoc:     true,
+		description: "Interpolation - just escape",
+		expression:  `"\\"`,
+		expected: []string{
+			"D0, P[], (!!str)::\\\n",
+		},
+	},
+	{
+		skipDoc:     true,
+		description: "Interpolation - nested",
+		document:    `value: things`,
+		expression:  `"Hi \( (.value) )"`,
+		expected: []string{
+			"D0, P[], (!!str)::Hi things\n",
+		},
+	},
+	{
+		skipDoc:     true,
+		description: "Interpolation - don't",
+		document:    `value: things`,
+		expression:  `"Hi (.value)"`,
+		expected: []string{
+			"D0, P[], (!!str)::Hi (.value)\n",
+		},
+	},
+	{
+		skipDoc:     true,
+		description: "Interpolation - don't!",
+		document:    `value: things`,
+		expression:  `"Hi \\(.value)"`,
+		expected: []string{
+			"D0, P[], (!!str)::Hi \\(.value)\n",
+		},
+	},
+	{
+		skipDoc:     true,
+		description: "Interpolation - random close bracket",
+		document:    `value: things`,
+		expression:  `"Hi )"`,
+		expected: []string{
+			"D0, P[], (!!str)::Hi )\n",
+		},
+	},
+	{
+		skipDoc:     true,
+		description: "Interpolation - unclosed interpolation string",
+		document:    `value: things`,
+		expression:  `"Hi \("`,
+		expected: []string{
+			"D0, P[], (!!str)::Hi \\(\n",
+		},
+	},
+	{
+		skipDoc:     true,
+		description: "Interpolation - unclosed interpolation string due to escape",
+		document:    `value: things`,
+		expression:  `"Hi \(\)"`,
+		expected: []string{
+			"D0, P[], (!!str)::Hi \\(\\)\n",
+		},
+	},
+	{
 		description:    "To up (upper) case",
 		subdescription: "Works with unicode characters",
 		document:       `água`,
@@ -71,7 +149,7 @@ var stringsOperatorScenarios = []expressionScenario{
 		document:    `foo bar foo`,
 		expression:  `match("foo")`,
 		expected: []string{
-			"D0, P[], ()::string: foo\noffset: 0\nlength: 3\ncaptures: []\n",
+			"D0, P[], (!!map)::string: foo\noffset: 0\nlength: 3\ncaptures: []\n",
 		},
 	},
 	{
@@ -79,7 +157,7 @@ var stringsOperatorScenarios = []expressionScenario{
 		document:   `!horse foo bar foo`,
 		expression: `match("foo")`,
 		expected: []string{
-			"D0, P[], ()::string: foo\noffset: 0\nlength: 3\ncaptures: []\n",
+			"D0, P[], (!!map)::string: foo\noffset: 0\nlength: 3\ncaptures: []\n",
 		},
 	},
 	{
@@ -111,7 +189,7 @@ var stringsOperatorScenarios = []expressionScenario{
 		document:    `xyzzy-14`,
 		expression:  `capture("(?P<a>[a-z]+)-(?P<n>[0-9]+)")`,
 		expected: []string{
-			"D0, P[], ()::a: xyzzy\nn: \"14\"\n",
+			"D0, P[], (!!map)::a: xyzzy\nn: \"14\"\n",
 		},
 	},
 	{
@@ -119,7 +197,7 @@ var stringsOperatorScenarios = []expressionScenario{
 		document:   `!horse xyzzy-14`,
 		expression: `capture("(?P<a>[a-z]+)-(?P<n>[0-9]+)")`,
 		expected: []string{
-			"D0, P[], ()::a: xyzzy\nn: \"14\"\n",
+			"D0, P[], (!!map)::a: xyzzy\nn: \"14\"\n",
 		},
 	},
 	{
@@ -128,7 +206,7 @@ var stringsOperatorScenarios = []expressionScenario{
 		document:    `xyzzy-14`,
 		expression:  `capture("(?P<a>[a-z]+)-(?P<n>[0-9]+)(?P<bar123>bar)?")`,
 		expected: []string{
-			"D0, P[], ()::a: xyzzy\nn: \"14\"\nbar123: null\n",
+			"D0, P[], (!!map)::a: xyzzy\nn: \"14\"\nbar123: null\n",
 		},
 	},
 	{
@@ -136,7 +214,7 @@ var stringsOperatorScenarios = []expressionScenario{
 		document:    `cat cat`,
 		expression:  `match("cat")`,
 		expected: []string{
-			"D0, P[], ()::string: cat\noffset: 0\nlength: 3\ncaptures: []\n",
+			"D0, P[], (!!map)::string: cat\noffset: 0\nlength: 3\ncaptures: []\n",
 		},
 	},
 	{
@@ -209,7 +287,7 @@ var stringsOperatorScenarios = []expressionScenario{
 		document:       `a: dogs are great`,
 		expression:     `.a |= sub("dogs", "cats")`,
 		expected: []string{
-			"D0, P[], (doc)::a: cats are great\n",
+			"D0, P[], (!!map)::a: cats are great\n",
 		},
 	},
 	{
@@ -218,7 +296,7 @@ var stringsOperatorScenarios = []expressionScenario{
 		document:       "a: cat\nb: heat",
 		expression:     `.[] |= sub("(a)", "${1}r")`,
 		expected: []string{
-			"D0, P[], (doc)::a: cart\nb: heart\n",
+			"D0, P[], (!!map)::a: cart\nb: heart\n",
 		},
 	},
 	{
@@ -227,7 +305,7 @@ var stringsOperatorScenarios = []expressionScenario{
 		document:       "a: !horse cat\nb: !goat heat",
 		expression:     `.[] |= sub("(a)", "${1}r")`,
 		expected: []string{
-			"D0, P[], (doc)::a: !horse cart\nb: !goat heart\n",
+			"D0, P[], (!!map)::a: !horse cart\nb: !goat heart\n",
 		},
 	},
 	{
@@ -244,6 +322,16 @@ var stringsOperatorScenarios = []expressionScenario{
 		expression:  `split("; ")`,
 		expected: []string{
 			"D0, P[], (!!seq)::- word\n",
+		},
+	},
+	{
+		description: "Split splat",
+		skipDoc:     true,
+		document:    `"word; cat"`,
+		expression:  `split("; ")[]`,
+		expected: []string{
+			"D0, P[0], (!!str)::word\n",
+			"D0, P[1], (!!str)::cat\n",
 		},
 	},
 	{
@@ -266,6 +354,15 @@ var stringsOperatorScenarios = []expressionScenario{
 		skipDoc:    true,
 		expression: `split("; ")`,
 		expected:   []string{},
+	},
+	{
+		description:    "To string",
+		subdescription: "Note that you may want to force `yq` to leave scalar values wrapped by passing in `--unwrapScalar=false` or `-r=f`",
+		document:       `[1, true, null, ~, cat, {an: object}, [array, 2]]`,
+		expression:     ".[] |= to_string",
+		expected: []string{
+			"D0, P[], (!!seq)::[\"1\", \"true\", \"null\", \"~\", cat, \"{an: object}\", \"[array, 2]\"]\n",
+		},
 	},
 }
 

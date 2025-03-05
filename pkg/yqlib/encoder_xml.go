@@ -8,8 +8,6 @@ import (
 	"io"
 	"regexp"
 	"strings"
-
-	yaml "gopkg.in/yaml.v3"
 )
 
 type xmlEncoder struct {
@@ -19,10 +17,10 @@ type xmlEncoder struct {
 	leadingContent string
 }
 
-func NewXMLEncoder(indent int, prefs XmlPreferences) Encoder {
+func NewXMLEncoder(prefs XmlPreferences) Encoder {
 	var indentString = ""
 
-	for index := 0; index < indent; index++ {
+	for index := 0; index < prefs.Indent; index++ {
 		indentString = indentString + " "
 	}
 	return &xmlEncoder{indentString, nil, prefs, ""}
@@ -32,28 +30,27 @@ func (e *xmlEncoder) CanHandleAliases() bool {
 	return false
 }
 
-func (e *xmlEncoder) PrintDocumentSeparator(writer io.Writer) error {
+func (e *xmlEncoder) PrintDocumentSeparator(_ io.Writer) error {
 	return nil
 }
 
-func (e *xmlEncoder) PrintLeadingContent(writer io.Writer, content string) error {
+func (e *xmlEncoder) PrintLeadingContent(_ io.Writer, content string) error {
 	e.leadingContent = content
 	return nil
 }
 
-func (e *xmlEncoder) Encode(writer io.Writer, node *yaml.Node) error {
+func (e *xmlEncoder) Encode(writer io.Writer, node *CandidateNode) error {
 	encoder := xml.NewEncoder(writer)
 	// hack so we can manually add newlines to procInst and directives
 	e.writer = writer
 	encoder.Indent("", e.indentString)
 	var newLine xml.CharData = []byte("\n")
 
-	mapNode := unwrapDoc(node)
-	if mapNode.Tag == "!!map" {
+	if node.Tag == "!!map" {
 		// make sure <?xml .. ?> processing instructions are encoded first
-		for i := 0; i < len(mapNode.Content); i += 2 {
-			key := mapNode.Content[i]
-			value := mapNode.Content[i+1]
+		for i := 0; i < len(node.Content); i += 2 {
+			key := node.Content[i]
+			value := node.Content[i+1]
 
 			if key.Value == (e.prefs.ProcInstPrefix + "xml") {
 				name := strings.Replace(key.Value, e.prefs.ProcInstPrefix, "", 1)
@@ -82,29 +79,12 @@ func (e *xmlEncoder) Encode(writer io.Writer, node *yaml.Node) error {
 	}
 
 	switch node.Kind {
-	case yaml.MappingNode:
+	case MappingNode:
 		err := e.encodeTopLevelMap(encoder, node)
 		if err != nil {
 			return err
 		}
-	case yaml.DocumentNode:
-		err := e.encodeComment(encoder, headAndLineComment(node))
-		if err != nil {
-			return err
-		}
-		unwrappedNode := unwrapDoc(node)
-		if unwrappedNode.Kind != yaml.MappingNode {
-			return fmt.Errorf("cannot encode %v to XML - only maps can be encoded", unwrappedNode.Tag)
-		}
-		err = e.encodeTopLevelMap(encoder, unwrappedNode)
-		if err != nil {
-			return err
-		}
-		err = e.encodeComment(encoder, footComment(node))
-		if err != nil {
-			return err
-		}
-	case yaml.ScalarNode:
+	case ScalarNode:
 		var charData xml.CharData = []byte(node.Value)
 		err := encoder.EncodeToken(charData)
 		if err != nil {
@@ -112,14 +92,14 @@ func (e *xmlEncoder) Encode(writer io.Writer, node *yaml.Node) error {
 		}
 		return encoder.Flush()
 	default:
-		return fmt.Errorf("unsupported type %v", node.Tag)
+		return fmt.Errorf("cannot encode %v to XML - only maps can be encoded", node.Tag)
 	}
 
 	return encoder.EncodeToken(newLine)
 
 }
 
-func (e *xmlEncoder) encodeTopLevelMap(encoder *xml.Encoder, node *yaml.Node) error {
+func (e *xmlEncoder) encodeTopLevelMap(encoder *xml.Encoder, node *CandidateNode) error {
 	err := e.encodeComment(encoder, headAndLineComment(node))
 	if err != nil {
 		return err
@@ -142,7 +122,7 @@ func (e *xmlEncoder) encodeTopLevelMap(encoder *xml.Encoder, node *yaml.Node) er
 			}
 		}
 
-		if key.Value == (e.prefs.ProcInstPrefix + "xml") {
+		if key.Value == (e.prefs.ProcInstPrefix + "xml") { //nolint
 			// dont double process these.
 		} else if strings.HasPrefix(key.Value, e.prefs.ProcInstPrefix) {
 			name := strings.Replace(key.Value, e.prefs.ProcInstPrefix, "", 1)
@@ -178,7 +158,7 @@ func (e *xmlEncoder) encodeTopLevelMap(encoder *xml.Encoder, node *yaml.Node) er
 	return e.encodeComment(encoder, footComment(node))
 }
 
-func (e *xmlEncoder) encodeStart(encoder *xml.Encoder, node *yaml.Node, start xml.StartElement) error {
+func (e *xmlEncoder) encodeStart(encoder *xml.Encoder, node *CandidateNode, start xml.StartElement) error {
 	err := encoder.EncodeToken(start)
 	if err != nil {
 		return err
@@ -186,7 +166,7 @@ func (e *xmlEncoder) encodeStart(encoder *xml.Encoder, node *yaml.Node, start xm
 	return e.encodeComment(encoder, headComment(node))
 }
 
-func (e *xmlEncoder) encodeEnd(encoder *xml.Encoder, node *yaml.Node, start xml.StartElement) error {
+func (e *xmlEncoder) encodeEnd(encoder *xml.Encoder, node *CandidateNode, start xml.StartElement) error {
 	err := encoder.EncodeToken(start.End())
 	if err != nil {
 		return err
@@ -194,13 +174,13 @@ func (e *xmlEncoder) encodeEnd(encoder *xml.Encoder, node *yaml.Node, start xml.
 	return e.encodeComment(encoder, footComment(node))
 }
 
-func (e *xmlEncoder) doEncode(encoder *xml.Encoder, node *yaml.Node, start xml.StartElement) error {
+func (e *xmlEncoder) doEncode(encoder *xml.Encoder, node *CandidateNode, start xml.StartElement) error {
 	switch node.Kind {
-	case yaml.MappingNode:
+	case MappingNode:
 		return e.encodeMap(encoder, node, start)
-	case yaml.SequenceNode:
+	case SequenceNode:
 		return e.encodeArray(encoder, node, start)
-	case yaml.ScalarNode:
+	case ScalarNode:
 		err := e.encodeStart(encoder, node, start)
 		if err != nil {
 			return err
@@ -233,7 +213,7 @@ func (e *xmlEncoder) encodeComment(encoder *xml.Encoder, commentStr string) erro
 			commentStr = chompRegexp.ReplaceAllString(commentStr, "")
 			log.Debugf("chompRegexp [%v]", commentStr)
 			commentStr = xmlEncodeMultilineCommentRegex.ReplaceAllString(commentStr, "$1$2")
-			log.Debugf("processed multine [%v]", commentStr)
+			log.Debugf("processed multiline [%v]", commentStr)
 			// if the first line is non blank, add a space
 			if commentStr[0] != '\n' && commentStr[0] != ' ' {
 				commentStr = " " + commentStr
@@ -258,7 +238,7 @@ func (e *xmlEncoder) encodeComment(encoder *xml.Encoder, commentStr string) erro
 	return nil
 }
 
-func (e *xmlEncoder) encodeArray(encoder *xml.Encoder, node *yaml.Node, start xml.StartElement) error {
+func (e *xmlEncoder) encodeArray(encoder *xml.Encoder, node *CandidateNode, start xml.StartElement) error {
 
 	if err := e.encodeComment(encoder, headAndLineComment(node)); err != nil {
 		return err
@@ -280,7 +260,7 @@ func (e *xmlEncoder) isAttribute(name string) bool {
 		!strings.HasPrefix(name, e.prefs.ProcInstPrefix)
 }
 
-func (e *xmlEncoder) encodeMap(encoder *xml.Encoder, node *yaml.Node, start xml.StartElement) error {
+func (e *xmlEncoder) encodeMap(encoder *xml.Encoder, node *CandidateNode, start xml.StartElement) error {
 	log.Debug("its a map")
 
 	//first find all the attributes and put them on the start token
@@ -289,7 +269,7 @@ func (e *xmlEncoder) encodeMap(encoder *xml.Encoder, node *yaml.Node, start xml.
 		value := node.Content[i+1]
 
 		if e.isAttribute(key.Value) {
-			if value.Kind == yaml.ScalarNode {
+			if value.Kind == ScalarNode {
 				attributeName := strings.Replace(key.Value, e.prefs.AttributePrefix, "", 1)
 				start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: attributeName}, Value: value.Value})
 			} else {

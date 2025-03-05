@@ -36,7 +36,7 @@ func nodeToList(candidate *CandidateNode) *list.List {
 func TestPrinterMultipleDocsInSequenceOnly(t *testing.T) {
 	var output bytes.Buffer
 	var writer = bufio.NewWriter(&output)
-	printer := NewSimpleYamlPrinter(writer, YamlOutputFormat, true, false, 2, true)
+	printer := NewSimpleYamlPrinter(writer, true, 2, true)
 
 	inputs, err := readDocuments(strings.NewReader(multiDocSample), "sample.yml", 0, NewYamlDecoder(ConfiguredYamlPreferences))
 	if err != nil {
@@ -74,7 +74,7 @@ func TestPrinterMultipleDocsInSequenceOnly(t *testing.T) {
 func TestPrinterMultipleDocsInSequenceWithLeadingContent(t *testing.T) {
 	var output bytes.Buffer
 	var writer = bufio.NewWriter(&output)
-	printer := NewSimpleYamlPrinter(writer, YamlOutputFormat, true, false, 2, true)
+	printer := NewSimpleYamlPrinter(writer, true, 2, true)
 
 	inputs, err := readDocuments(strings.NewReader(multiDocSample), "sample.yml", 0, NewYamlDecoder(ConfiguredYamlPreferences))
 	if err != nil {
@@ -82,15 +82,15 @@ func TestPrinterMultipleDocsInSequenceWithLeadingContent(t *testing.T) {
 	}
 
 	el := inputs.Front()
-	el.Value.(*CandidateNode).LeadingContent = "# go cats\n$yqDocSeperator$\n"
+	el.Value.(*CandidateNode).LeadingContent = "# go cats\n$yqDocSeparator$\n"
 	sample1 := nodeToList(el.Value.(*CandidateNode))
 
 	el = el.Next()
-	el.Value.(*CandidateNode).LeadingContent = "$yqDocSeperator$\n"
+	el.Value.(*CandidateNode).LeadingContent = "$yqDocSeparator$\n"
 	sample2 := nodeToList(el.Value.(*CandidateNode))
 
 	el = el.Next()
-	el.Value.(*CandidateNode).LeadingContent = "$yqDocSeperator$\n# cool\n"
+	el.Value.(*CandidateNode).LeadingContent = "$yqDocSeparator$\n# cool\n"
 	sample3 := nodeToList(el.Value.(*CandidateNode))
 
 	err = printer.PrintResults(sample1)
@@ -116,7 +116,7 @@ func TestPrinterMultipleDocsInSequenceWithLeadingContent(t *testing.T) {
 func TestPrinterMultipleFilesInSequence(t *testing.T) {
 	var output bytes.Buffer
 	var writer = bufio.NewWriter(&output)
-	printer := NewSimpleYamlPrinter(writer, YamlOutputFormat, true, false, 2, true)
+	printer := NewSimpleYamlPrinter(writer, true, 2, true)
 
 	inputs, err := readDocuments(strings.NewReader(multiDocSample), "sample.yml", 0, NewYamlDecoder(ConfiguredYamlPreferences))
 	if err != nil {
@@ -125,20 +125,20 @@ func TestPrinterMultipleFilesInSequence(t *testing.T) {
 
 	el := inputs.Front()
 	elNode := el.Value.(*CandidateNode)
-	elNode.Document = 0
-	elNode.FileIndex = 0
+	elNode.document = 0
+	elNode.fileIndex = 0
 	sample1 := nodeToList(elNode)
 
 	el = el.Next()
 	elNode = el.Value.(*CandidateNode)
-	elNode.Document = 0
-	elNode.FileIndex = 1
+	elNode.document = 0
+	elNode.fileIndex = 1
 	sample2 := nodeToList(elNode)
 
 	el = el.Next()
 	elNode = el.Value.(*CandidateNode)
-	elNode.Document = 0
-	elNode.FileIndex = 2
+	elNode.document = 0
+	elNode.fileIndex = 2
 	sample3 := nodeToList(elNode)
 
 	err = printer.PrintResults(sample1)
@@ -163,7 +163,7 @@ func TestPrinterMultipleFilesInSequence(t *testing.T) {
 func TestPrinterMultipleFilesInSequenceWithLeadingContent(t *testing.T) {
 	var output bytes.Buffer
 	var writer = bufio.NewWriter(&output)
-	printer := NewSimpleYamlPrinter(writer, YamlOutputFormat, true, false, 2, true)
+	printer := NewSimpleYamlPrinter(writer, true, 2, true)
 
 	inputs, err := readDocuments(strings.NewReader(multiDocSample), "sample.yml", 0, NewYamlDecoder(ConfiguredYamlPreferences))
 	if err != nil {
@@ -172,23 +172,23 @@ func TestPrinterMultipleFilesInSequenceWithLeadingContent(t *testing.T) {
 
 	el := inputs.Front()
 	elNode := el.Value.(*CandidateNode)
-	elNode.Document = 0
-	elNode.FileIndex = 0
-	elNode.LeadingContent = "# go cats\n$yqDocSeperator$\n"
+	elNode.document = 0
+	elNode.fileIndex = 0
+	elNode.LeadingContent = "# go cats\n$yqDocSeparator$\n"
 	sample1 := nodeToList(elNode)
 
 	el = el.Next()
 	elNode = el.Value.(*CandidateNode)
-	elNode.Document = 0
-	elNode.FileIndex = 1
-	elNode.LeadingContent = "$yqDocSeperator$\n"
+	elNode.document = 0
+	elNode.fileIndex = 1
+	elNode.LeadingContent = "$yqDocSeparator$\n"
 	sample2 := nodeToList(elNode)
 
 	el = el.Next()
 	elNode = el.Value.(*CandidateNode)
-	elNode.Document = 0
-	elNode.FileIndex = 2
-	elNode.LeadingContent = "$yqDocSeperator$\n# cool\n"
+	elNode.document = 0
+	elNode.fileIndex = 2
+	elNode.LeadingContent = "$yqDocSeparator$\n# cool\n"
 	sample3 := nodeToList(elNode)
 
 	err = printer.PrintResults(sample1)
@@ -213,7 +213,7 @@ func TestPrinterMultipleFilesInSequenceWithLeadingContent(t *testing.T) {
 func TestPrinterMultipleDocsInSinglePrint(t *testing.T) {
 	var output bytes.Buffer
 	var writer = bufio.NewWriter(&output)
-	printer := NewSimpleYamlPrinter(writer, YamlOutputFormat, true, false, 2, true)
+	printer := NewSimpleYamlPrinter(writer, true, 2, true)
 
 	inputs, err := readDocuments(strings.NewReader(multiDocSample), "sample.yml", 0, NewYamlDecoder(ConfiguredYamlPreferences))
 	if err != nil {
@@ -232,14 +232,14 @@ func TestPrinterMultipleDocsInSinglePrint(t *testing.T) {
 func TestPrinterMultipleDocsInSinglePrintWithLeadingDoc(t *testing.T) {
 	var output bytes.Buffer
 	var writer = bufio.NewWriter(&output)
-	printer := NewSimpleYamlPrinter(writer, YamlOutputFormat, true, false, 2, true)
+	printer := NewSimpleYamlPrinter(writer, true, 2, true)
 
 	inputs, err := readDocuments(strings.NewReader(multiDocSample), "sample.yml", 0, NewYamlDecoder(ConfiguredYamlPreferences))
 	if err != nil {
 		panic(err)
 	}
 
-	inputs.Front().Value.(*CandidateNode).LeadingContent = "# go cats\n$yqDocSeperator$\n"
+	inputs.Front().Value.(*CandidateNode).LeadingContent = "# go cats\n$yqDocSeparator$\n"
 
 	err = printer.PrintResults(inputs)
 	if err != nil {
@@ -261,13 +261,13 @@ a: coconut
 func TestPrinterMultipleDocsInSinglePrintWithLeadingDocTrailing(t *testing.T) {
 	var output bytes.Buffer
 	var writer = bufio.NewWriter(&output)
-	printer := NewSimpleYamlPrinter(writer, YamlOutputFormat, true, false, 2, true)
+	printer := NewSimpleYamlPrinter(writer, true, 2, true)
 
 	inputs, err := readDocuments(strings.NewReader(multiDocSample), "sample.yml", 0, NewYamlDecoder(ConfiguredYamlPreferences))
 	if err != nil {
 		panic(err)
 	}
-	inputs.Front().Value.(*CandidateNode).LeadingContent = "$yqDocSeperator$\n"
+	inputs.Front().Value.(*CandidateNode).LeadingContent = "$yqDocSeparator$\n"
 	err = printer.PrintResults(inputs)
 	if err != nil {
 		panic(err)
@@ -287,7 +287,7 @@ a: coconut
 func TestPrinterScalarWithLeadingCont(t *testing.T) {
 	var output bytes.Buffer
 	var writer = bufio.NewWriter(&output)
-	printer := NewSimpleYamlPrinter(writer, YamlOutputFormat, true, false, 2, true)
+	printer := NewSimpleYamlPrinter(writer, true, 2, true)
 
 	node, err := getExpressionParser().ParseExpression(".a")
 	if err != nil {
@@ -313,8 +313,10 @@ func TestPrinterMultipleDocsJson(t *testing.T) {
 	var output bytes.Buffer
 	var writer = bufio.NewWriter(&output)
 	// note printDocSeparators is true, it should still not print document separators
-	// when outputing JSON.
-	encoder := NewJSONEncoder(0, false, false)
+	// when outputting JSON.
+	prefs := ConfiguredJSONPreferences.Copy()
+	prefs.Indent = 0
+	encoder := NewJSONEncoder(prefs)
 	if encoder == nil {
 		t.Skipf("no support for %s output format", "json")
 	}
@@ -338,5 +340,77 @@ func TestPrinterMultipleDocsJson(t *testing.T) {
 `
 
 	writer.Flush()
+	test.AssertResult(t, expected, output.String())
+}
+
+func TestPrinterNulSeparator(t *testing.T) {
+	var output bytes.Buffer
+	var writer = bufio.NewWriter(&output)
+	printer := NewSimpleYamlPrinter(writer, true, 2, false)
+	printer.SetNulSepOutput(true)
+	node, err := getExpressionParser().ParseExpression(".a")
+	if err != nil {
+		panic(err)
+	}
+	streamEvaluator := NewStreamEvaluator()
+	_, err = streamEvaluator.Evaluate("sample", strings.NewReader(multiDocSample), node, printer, NewYamlDecoder(ConfiguredYamlPreferences))
+	if err != nil {
+		panic(err)
+	}
+
+	writer.Flush()
+	expected := "banana\x00apple\x00coconut\x00"
+	test.AssertResult(t, expected, output.String())
+}
+
+func TestPrinterNulSeparatorWithJson(t *testing.T) {
+	var output bytes.Buffer
+	var writer = bufio.NewWriter(&output)
+	// note printDocSeparators is true, it should still not print document separators
+	// when outputting JSON.
+	prefs := ConfiguredJSONPreferences.Copy()
+	prefs.Indent = 0
+	encoder := NewJSONEncoder(prefs)
+	if encoder == nil {
+		t.Skipf("no support for %s output format", "json")
+	}
+	printer := NewPrinter(encoder, NewSinglePrinterWriter(writer))
+	printer.SetNulSepOutput(true)
+
+	inputs, err := readDocuments(strings.NewReader(multiDocSample), "sample.yml", 0, NewYamlDecoder(ConfiguredYamlPreferences))
+	if err != nil {
+		panic(err)
+	}
+
+	inputs.Front().Value.(*CandidateNode).LeadingContent = "# ignore this\n"
+
+	err = printer.PrintResults(inputs)
+	if err != nil {
+		panic(err)
+	}
+
+	expected := `{"a":"banana"}` + "\x00" + `{"a":"apple"}` + "\x00" + `{"a":"coconut"}` + "\x00"
+
+	writer.Flush()
+	test.AssertResult(t, expected, output.String())
+}
+
+func TestPrinterRootUnwrap(t *testing.T) {
+	var output bytes.Buffer
+	var writer = bufio.NewWriter(&output)
+	printer := NewSimpleYamlPrinter(writer, true, 2, false)
+	node, err := getExpressionParser().ParseExpression(".")
+	if err != nil {
+		panic(err)
+	}
+	streamEvaluator := NewStreamEvaluator()
+	_, err = streamEvaluator.Evaluate("sample", strings.NewReader("'a'"), node, printer, NewYamlDecoder(ConfiguredYamlPreferences))
+	if err != nil {
+		panic(err)
+	}
+
+	writer.Flush()
+	expected := `a
+`
 	test.AssertResult(t, expected, output.String())
 }

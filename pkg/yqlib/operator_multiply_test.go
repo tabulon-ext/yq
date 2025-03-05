@@ -1,6 +1,8 @@
 package yqlib
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -171,7 +173,56 @@ var multiplyOperatorScenarios = []expressionScenario{
 		document:    "a: 3\nb: 4",
 		expression:  `.a *= .b`,
 		expected: []string{
-			"D0, P[], (doc)::a: 12\nb: 4\n",
+			"D0, P[], (!!map)::a: 12\nb: 4\n",
+		},
+	},
+	{
+		description: "Multiply string node X int",
+		document:    docNoComments,
+		expression:  ".b * 4",
+		expected: []string{
+			fmt.Sprintf("D0, P[b], (!!str)::%s\n", strings.Repeat("banana", 4)),
+		},
+	},
+	{
+		description: "Multiply int X string node",
+		document:    docNoComments,
+		expression:  "4 * .b",
+		expected: []string{
+			fmt.Sprintf("D0, P[], (!!str)::%s\n", strings.Repeat("banana", 4)),
+		},
+	},
+	{
+		description: "Multiply string X int node",
+		document: `n: 4
+`,
+		expression: `"banana" * .n`,
+		expected: []string{
+			fmt.Sprintf("D0, P[], (!!str)::%s\n", strings.Repeat("banana", 4)),
+		},
+	},
+	{
+		description:   "Multiply string X by negative int",
+		skipDoc:       true,
+		document:      `n: -4`,
+		expression:    `"banana" * .n`,
+		expectedError: "Cannot repeat string by a negative number (-4)",
+	},
+	{
+		description: "Multiply string X by more than 100 million",
+		// very large string.repeats causes a panic
+		skipDoc:       true,
+		document:      `n: 100000001`,
+		expression:    `"banana" * .n`,
+		expectedError: "Cannot repeat string by more than 100 million (100000001)",
+	},
+	{
+		description: "Multiply int node X string",
+		document: `n: 4
+`,
+		expression: `.n * "banana"`,
+		expected: []string{
+			fmt.Sprintf("D0, P[n], (!!str)::%s\n", strings.Repeat("banana", 4)),
 		},
 	},
 	{
@@ -435,7 +486,7 @@ var multiplyOperatorScenarios = []expressionScenario{
 		environmentVariables: map[string]string{"originalPath": ".myArray", "otherPath": ".newArray", "idPath": ".a"},
 		expression:           mergeExpression,
 		expected: []string{
-			"D0, P[], (doc)::{myArray: [{a: apple, b: appleB2}, {a: kiwi, b: kiwiB}, {a: banana, b: bananaB, c: bananaC}, {a: dingo, c: dingoC}], something: else}\n",
+			"D0, P[], (!!map)::{myArray: [{a: apple, b: appleB2}, {a: kiwi, b: kiwiB}, {a: banana, b: bananaB, c: bananaC}, {a: dingo, c: dingoC}], something: else}\n",
 		},
 	},
 	{
@@ -484,7 +535,7 @@ var multiplyOperatorScenarios = []expressionScenario{
 		document:       "a: !horse 2\nb: !goat 3",
 		expression:     ".a = .a * .b",
 		expected: []string{
-			"D0, P[], (doc)::a: !horse 6\nb: !goat 3\n",
+			"D0, P[], (!!map)::a: !horse 6\nb: !goat 3\n",
 		},
 	},
 	{
@@ -493,7 +544,7 @@ var multiplyOperatorScenarios = []expressionScenario{
 		document:    "a: !horse 2.5\nb: !goat 3.5",
 		expression:  ".a = .a * .b",
 		expected: []string{
-			"D0, P[], (doc)::a: !horse 8.75\nb: !goat 3.5\n",
+			"D0, P[], (!!map)::a: !horse 8.75\nb: !goat 3.5\n",
 		},
 	},
 	{
@@ -502,7 +553,7 @@ var multiplyOperatorScenarios = []expressionScenario{
 		document:    "a: 2\nb: !goat 3.5",
 		expression:  ".a = .a * .b",
 		expected: []string{
-			"D0, P[], (doc)::a: !!float 7\nb: !goat 3.5\n",
+			"D0, P[], (!!map)::a: !!float 7\nb: !goat 3.5\n",
 		},
 	},
 	{
@@ -511,7 +562,7 @@ var multiplyOperatorScenarios = []expressionScenario{
 		document:    "a: !horse [1,2]\nb: !goat [3]",
 		expression:  ".a = .a * .b",
 		expected: []string{
-			"D0, P[], (doc)::a: !horse [3]\nb: !goat [3]\n",
+			"D0, P[], (!!map)::a: !horse [3]\nb: !goat [3]\n",
 		},
 	},
 	{
@@ -520,7 +571,7 @@ var multiplyOperatorScenarios = []expressionScenario{
 		document:       "a: !horse {cat: meow}\nb: !goat {dog: woof}",
 		expression:     ".a = .a * .b",
 		expected: []string{
-			"D0, P[], (doc)::a: !horse {cat: meow, dog: woof}\nb: !goat {dog: woof}\n",
+			"D0, P[], (!!map)::a: !horse {cat: meow, dog: woof}\nb: !goat {dog: woof}\n",
 		},
 	},
 	{
@@ -529,7 +580,7 @@ var multiplyOperatorScenarios = []expressionScenario{
 		document:       "a: !horse {cat: meow}\nb: !goat {dog: woof}",
 		expression:     ".a *=c .b",
 		expected: []string{
-			"D0, P[], (doc)::a: !goat {cat: meow, dog: woof}\nb: !goat {dog: woof}\n",
+			"D0, P[], (!!map)::a: !goat {cat: meow, dog: woof}\nb: !goat {dog: woof}\n",
 		},
 	},
 	{
@@ -539,7 +590,7 @@ var multiplyOperatorScenarios = []expressionScenario{
 		document:       "a: !horse {cat: meow}\nb: !goat {dog: woof}",
 		expression:     ".a =c .a *c .b",
 		expected: []string{
-			"D0, P[], (doc)::a: !goat {cat: meow, dog: woof}\nb: !goat {dog: woof}\n",
+			"D0, P[], (!!map)::a: !goat {cat: meow, dog: woof}\nb: !goat {dog: woof}\n",
 		},
 	},
 	{
@@ -549,7 +600,7 @@ var multiplyOperatorScenarios = []expressionScenario{
 		document:       "a: !horse {cat: meow}\nb: !goat {dog: woof}",
 		expression:     ".a *= .b",
 		expected: []string{
-			"D0, P[], (doc)::a: !horse {cat: meow, dog: woof}\nb: !goat {dog: woof}\n",
+			"D0, P[], (!!map)::a: !horse {cat: meow, dog: woof}\nb: !goat {dog: woof}\n",
 		},
 	},
 	{
@@ -558,7 +609,7 @@ var multiplyOperatorScenarios = []expressionScenario{
 		document:    "a: {cat: !horse meow}\nb: {cat: 5}",
 		expression:  ".a = .a * .b",
 		expected: []string{
-			"D0, P[], (doc)::a: {cat: !horse 5}\nb: {cat: 5}\n",
+			"D0, P[], (!!map)::a: {cat: !horse 5}\nb: {cat: 5}\n",
 		},
 	},
 	{
@@ -567,7 +618,7 @@ var multiplyOperatorScenarios = []expressionScenario{
 		document:    "a: {a: original}\n",
 		expression:  `.a *=n load("../../examples/thing.yml")`,
 		expected: []string{
-			"D0, P[], (doc)::a: {a: original, b: cool.}\n",
+			"D0, P[], (!!map)::a: {a: original, b: cool.}\n",
 		},
 	},
 	{
@@ -576,7 +627,7 @@ var multiplyOperatorScenarios = []expressionScenario{
 		document:    "a: {a: original}\n",
 		expression:  `.a *= load("../../examples/thing.yml")`,
 		expected: []string{
-			"D0, P[], (doc)::a: {a: apple is included, b: cool.}\n",
+			"D0, P[], (!!map)::a: {a: apple is included, b: cool.}\n",
 		},
 	},
 	{
@@ -594,7 +645,7 @@ var multiplyOperatorScenarios = []expressionScenario{
 		},
 	},
 	{
-		description: "Merging an null with an array",
+		description: "Merging a null with an array",
 		expression:  `null * ["some"]`,
 		expected: []string{
 			"D0, P[], (!!seq)::- some\n",
